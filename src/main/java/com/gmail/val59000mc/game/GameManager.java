@@ -16,6 +16,7 @@ import com.gmail.val59000mc.maploader.MapLoader;
 import com.gmail.val59000mc.players.PlayerManager;
 import com.gmail.val59000mc.players.TeamManager;
 import com.gmail.val59000mc.players.UhcPlayer;
+import com.gmail.val59000mc.scenarios.Scenario;
 import com.gmail.val59000mc.scenarios.ScenarioManager;
 import com.gmail.val59000mc.scoreboard.ScoreboardLayout;
 import com.gmail.val59000mc.scoreboard.ScoreboardManager;
@@ -284,6 +285,10 @@ public class GameManager{
 		playerManager.startWatchPlayerPlayingThread();
 		Bukkit.getScheduler().runTaskAsynchronously(UhcCore.getPlugin(), new ElapsedTimeThread(this, customEventHandler));
 		Bukkit.getScheduler().runTaskAsynchronously(UhcCore.getPlugin(), new EnablePVPThread(this));
+
+		if(scenarioManager.isEnabled(Scenario.LOVE_AT_FIRST_SIGHT)) {
+			Bukkit.getScheduler().runTaskLater(UhcCore.getPlugin(), new PlayersInCertainDistanceThread(gameManager), 600);
+		}
 
 		if (config.get(MainConfig.ENABLE_EPISODE_MARKERS)){
 			Bukkit.getScheduler().runTaskAsynchronously(UhcCore.getPlugin(), new EpisodeMarkersThread(this));
