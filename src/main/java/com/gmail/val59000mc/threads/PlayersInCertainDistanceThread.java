@@ -78,7 +78,7 @@ public class PlayersInCertainDistanceThread implements Runnable {
                 // Logic for message
                 player.getPlayer().spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.GOLD + "Hay un jugador a " + ((int) distance) + " bloques."));
 
-                player.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 30, 0));
+                player.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 30, 3));
 
             } catch (UhcPlayerNotOnlineException e) {
                 e.printStackTrace();

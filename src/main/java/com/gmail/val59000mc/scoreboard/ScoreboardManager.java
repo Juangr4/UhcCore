@@ -9,6 +9,7 @@ import com.gmail.val59000mc.players.*;
 import com.gmail.val59000mc.scenarios.Scenario;
 import com.gmail.val59000mc.scenarios.scenariolisteners.SilentNightListener;
 import com.gmail.val59000mc.scoreboard.placeholders.BlocksToTeamLeader;
+import com.gmail.val59000mc.scoreboard.placeholders.PingPlaceholder;
 import com.gmail.val59000mc.scoreboard.placeholders.ScenariosPlaceholder;
 import com.gmail.val59000mc.scoreboard.placeholders.TeamMembersPlaceholder;
 import com.gmail.val59000mc.scoreboard.placeholders.TimersPlaceholder;
@@ -36,13 +37,18 @@ public class ScoreboardManager {
         placeholders.add(new TeamMembersPlaceholder());
         placeholders.add(new ScenariosPlaceholder());
         placeholders.add(new TimersPlaceholder());
+        placeholders.add(new PingPlaceholder());
     }
 
     public ScoreboardLayout getScoreboardLayout() {
         return scoreboardLayout;
     }
 
-    public String translatePlaceholders(String s, UhcPlayer uhcPlayer, Player bukkitPlayer, ScoreboardType scoreboardType){
+    public String translatePlaceholders(String s, UhcPlayer uhcPlayer, Player bukkitPlayer, ScoreboardType scoreboardType) {
+        return translatePlaceholders(s, uhcPlayer, bukkitPlayer, scoreboardType, true);
+    }
+
+    public String translatePlaceholders(String s, UhcPlayer uhcPlayer, Player bukkitPlayer, ScoreboardType scoreboardType, boolean checkLenght){
 
         String returnString = s;
         GameManager gm = GameManager.getGameManager();
@@ -177,7 +183,7 @@ public class ScoreboardManager {
             returnString = placeholder.parseString(returnString, uhcPlayer, bukkitPlayer, scoreboardType);
         }
 
-        if (returnString.length() > 32){
+        if (checkLenght && returnString.length() > 32){
             Bukkit.getLogger().warning("[UhcCore] Scoreboard line is too long: '" + returnString + "'!");
             returnString = "";
         }

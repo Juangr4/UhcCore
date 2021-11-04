@@ -1,7 +1,13 @@
 package com.gmail.val59000mc.game.handlers;
 
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import com.gmail.val59000mc.UhcCore;
 import com.gmail.val59000mc.configuration.MainConfig;
+import com.gmail.val59000mc.configuration.YamlFile;
 import com.gmail.val59000mc.exceptions.UhcPlayerNotOnlineException;
 import com.gmail.val59000mc.game.GameManager;
 import com.gmail.val59000mc.game.GameState;
@@ -10,9 +16,11 @@ import com.gmail.val59000mc.scoreboard.ScoreboardLayout;
 import com.gmail.val59000mc.scoreboard.ScoreboardManager;
 import com.gmail.val59000mc.scoreboard.ScoreboardType;
 import com.gmail.val59000mc.threads.UpdateScoreboardThread;
+import com.gmail.val59000mc.utils.FileUtils;
 import com.gmail.val59000mc.utils.VersionUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.*;
 
@@ -41,10 +49,17 @@ public class ScoreboardHandler {
     private final MainConfig config;
     private final ScoreboardLayout scoreboardLayout;
 
+    private YamlFile tabcfg;
+
     public ScoreboardHandler(GameManager gameManager, MainConfig config, ScoreboardLayout scoreboardLayout) {
         this.gameManager = gameManager;
         this.config = config;
         this.scoreboardLayout = scoreboardLayout;
+        try {
+            this.tabcfg = FileUtils.saveResourceIfNotAvailable(UhcCore.getPlugin(), "tablist.yml");
+        } catch (InvalidConfigurationException e) {
+            // Nothing happen
+        }
     }
 
     public void setUpPlayerScoreboard(UhcPlayer uhcPlayer, Player bukkitPlayer) {
@@ -338,6 +353,46 @@ public class ScoreboardHandler {
 
             i++;
         }
+
+        // Generate header and footer and add it to the player tablist
+        Pattern pattern = Pattern.compile("&#[a-fA-F0-9]{6}");
+        String header = "";
+        for(String line : tabcfg.getStringList("header")) {
+            
+            // TODO: Implements PlaceholderAPI via a PlaceholderUtils class
+            line = scoreboardManager.translatePlaceholders(line, uhcPlayer, player, scoreboardType, false);
+            // Brute impl of Placeholder %ping%
+            // line = line.replace("%ping%", "Fede");
+
+            Matcher match = pattern.matcher(line);
+            while(match.find()) {
+                String color = line.substring(match.start(), match.end());
+                line = line.replace(color, net.md_5.bungee.api.ChatColor.of(color.substring(1)) + "");
+                match = pattern.matcher(line);
+            }
+            
+            line = net.md_5.bungee.api.ChatColor.translateAlternateColorCodes('&', line);
+
+            header += line + "\n";
+        }
+        String footer = "";
+        for(String line : tabcfg.getStringList("footer")) {
+
+            // TODO: Implements PlaceholderAPI via a PlaceholderUtils class
+            line = scoreboardManager.translatePlaceholders(line, uhcPlayer, player, scoreboardType, false);
+            
+            Matcher match = pattern.matcher(line);
+            while(match.find()) {
+                String color = line.substring(match.start(), match.end());
+                line = line.replace(color, net.md_5.bungee.api.ChatColor.of(color.substring(1)) + "");
+                match = pattern.matcher(line);
+            }
+            
+            line = net.md_5.bungee.api.ChatColor.translateAlternateColorCodes('&', line);
+
+            footer += line + "\n";
+        }
+        player.setPlayerListHeaderFooter(header,footer);
     }
 
     public ScoreboardType getPlayerScoreboardType(UhcPlayer uhcPlayer) {
