@@ -5,6 +5,8 @@ import com.gmail.val59000mc.languages.Lang;
 import com.gmail.val59000mc.players.PlayerState;
 import com.gmail.val59000mc.players.PlayerManager;
 import com.gmail.val59000mc.players.UhcPlayer;
+
+import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -58,17 +60,19 @@ public class PlayerChatListener implements Listener{
 			uhcPlayer.getTeam().sendChatMessageToTeamMembers(uhcPlayer, e.getMessage());
         }
 
+		e.setFormat(uhcPlayer.getTeam().getColor() + "[" + uhcPlayer.getTeam().getTeamName() + "] " + ChatColor.RESET + "%s >> %s");;
+
 	}
 
 	private boolean isTeamMessage(AsyncPlayerChatEvent e, UhcPlayer uhcPlayer){
 		if (configuration.get(MainConfig.ENABLE_CHAT_PREFIX)){
-			if (e.getMessage().startsWith(configuration.get(MainConfig.TEAM_CHAT_PREFIX))){
-				e.setMessage(e.getMessage().replaceFirst(configuration.get(MainConfig.TEAM_CHAT_PREFIX), ""));
-				return true;
-			}
 			if (e.getMessage().startsWith(configuration.get(MainConfig.GLOBAL_CHAT_PREFIX))){
 				e.setMessage(e.getMessage().replaceFirst(configuration.get(MainConfig.GLOBAL_CHAT_PREFIX), ""));
 				return false;
+			}
+			if (e.getMessage().startsWith(configuration.get(MainConfig.TEAM_CHAT_PREFIX))){
+				e.setMessage(e.getMessage().replaceFirst(configuration.get(MainConfig.TEAM_CHAT_PREFIX), ""));
+				return true;
 			}
 		}
 

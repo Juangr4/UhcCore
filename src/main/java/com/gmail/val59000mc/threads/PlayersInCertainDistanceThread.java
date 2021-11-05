@@ -1,8 +1,15 @@
 package com.gmail.val59000mc.threads;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.comphenix.protocol.PacketType;
+import com.comphenix.protocol.ProtocolLibrary;
+import com.comphenix.protocol.events.PacketContainer;
+import com.comphenix.protocol.wrappers.WrappedDataWatcher;
+import com.comphenix.protocol.wrappers.WrappedDataWatcher.Registry;
+import com.comphenix.protocol.wrappers.WrappedDataWatcher.Serializer;
 import com.gmail.val59000mc.UhcCore;
 import com.gmail.val59000mc.exceptions.UhcPlayerNotOnlineException;
 import com.gmail.val59000mc.game.GameManager;
@@ -11,6 +18,7 @@ import com.gmail.val59000mc.players.UhcPlayer;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -34,6 +42,7 @@ public class PlayersInCertainDistanceThread implements Runnable {
     public void run() {
 
         Map<UhcPlayer, Double> playersAndDistances = new HashMap<>();
+        Map<UhcPlayer, UhcPlayer> playerToPlayer = new HashMap<>();
 
         for(UhcPlayer player : gameManager.getPlayerManager().getOnlinePlayingPlayers()) {
             if(!player.isPlaying()) continue;
@@ -45,6 +54,7 @@ public class PlayersInCertainDistanceThread implements Runnable {
                 // e.printStackTrace();
                 continue;
             }
+            if(bPlayer.getGameMode() == GameMode.SPECTATOR) continue;
             for(UhcPlayer player2: gameManager.getPlayerManager().getOnlinePlayingPlayers()) {
                 Player bPlayer2;
                 try {
@@ -63,9 +73,11 @@ public class PlayersInCertainDistanceThread implements Runnable {
 
                 if (!playersAndDistances.containsKey(player)) {
                     playersAndDistances.put(player, distance);
+                    playerToPlayer.put(player, player2);
                 } else {
                     if (distance < playersAndDistances.get(player)) {
                         playersAndDistances.put(player, distance);
+                        playerToPlayer.put(player, player2);
                     } // Si miro esto mucho me va a dar algo en los ojos
                 }
 
@@ -74,13 +86,29 @@ public class PlayersInCertainDistanceThread implements Runnable {
 
         for(UhcPlayer player: playersAndDistances.keySet()) {
             int distance = playersAndDistances.get(player).intValue();
+            UhcPlayer target = playerToPlayer.get(player);
             try {
                 // Logic for message
                 player.getPlayer().spigot().sendMessage(ChatMessageType.ACTION_BAR, new TextComponent(ChatColor.GOLD + "Hay un jugador a " + ((int) distance) + " bloques."));
 
-                player.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 30, 3));
+                // Adding glowing to the target players
+                // player.getPlayer().addPotionEffect(new PotionEffect(PotionEffectType.GLOWING, 30, 3));
 
-            } catch (UhcPlayerNotOnlineException e) {
+                PacketContainer packet = new PacketContainer(PacketType.Play.Server.ENTITY_METADATA);
+                packet.getIntegers().write(0, player.getPlayer().getEntityId());
+
+                WrappedDataWatcher watcher = new WrappedDataWatcher();
+                
+                Serializer serializer = Registry.get(Byte.class);
+
+                watcher.setEntity(player.getPlayer());
+                watcher.setObject(0, serializer, (byte) 0x40);
+
+                packet.getWatchableCollectionModifier().write(0, watcher.getWatchableObjects());
+
+                ProtocolLibrary.getProtocolManager().sendServerPacket(target.getPlayer(), packet);
+
+            } catch (UhcPlayerNotOnlineException | InvocationTargetException e) {
                 e.printStackTrace();
             }
         }
